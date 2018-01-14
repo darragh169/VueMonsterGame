@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+
+<style type="text/css">
+	h1 {
+		text-align: center;
+	}
+
+	.game-container {
+		width: 90%;
+		margin: auto;
+	}
+
+	.player{
+		display: inline-block;
+		border: 2px solid black;
+		height: 120px;
+		width: 400px;
+	}
+
+	.player-title {
+		padding: 5px;
+		font-weight: bold;
+	}
+
+	.player-health{
+		width: 80%;
+		margin: auto;
+		border: 2px solid black;
+		height: 60px;
+	}
+
+	.current-health{
+		height: 100%;
+		width: 50%;
+		background-color: green;
+	}
+
+	.button-container{
+		margin-top: 10px;
+		border: 2px solid black;
+		height: 100px;
+		width: 650px;
+	}
+
+	.buttons {
+		padding-top: 10px;
+		text-align: center;
+	}
+
+	.button {
+		display: inline-block;
+		width: 150px;
+		height: 30px;
+		border: 2px solid black;
+		cursor: pointer;
+		font-weight: bold;
+	}
+	
+	.game-log{
+		border: 2px solid black;
+		min-height: 20px;
+		width: 650px;
+		margin-top: 10px;
+	}
+
+	.game-log table {
+		table-layout:fixed;
+		width: 100%;
+	}
+
+	.game-log td {
+    	padding: 10px;
+    	text-align: left;
+    	font-weight: bold;
+	}
+
+	.game-status {
+		border: 2px solid black;
+		min-height: 20px;
+		width: 650px;
+		margin-top: 10px;
+		text-align: center;
+		font-size: 24px;
+		font-weight: bold;
+	}
+
+	.attack{
+		background-color:  #ff7070;
+	}
+
+	.heal{
+		background-color:  #98FB98;
+	}
+
+	.special {
+		background-color:  #70f8ff;
+	}
+</style>
+
+<head>
+	<script src="https://unpkg.com/vue"></script>
+</head>
+
+<body>
+
+<div class="game-container">
+	<div class="player">
+		<div class="player-title">
+			Me
+		</div>
+		<div class="player-health">
+			<div class="current-health" v-bind:style="{ width: getPlayerHealth }"></div>
+		</div>
+	</div>
+	<div class="player">
+		<div class="player-title">
+			Monster
+		</div>
+		<div class="player-health">
+			<div class="current-health" v-bind:style="{ width: getMonsterHealth }"></div>
+		</div>
+	</div>
+	<div class="game-status" v-if="gameOver">
+		<div>GAME OVER</div>
+		<div class="button" v-on:click="reset">Restart</div>
+	</div>
+	<div class="button-container" v-if="!gameOver">
+		<div class="buttons">
+			<div class="button" v-on:click="attack">ATTACK</div>
+			<div class="button" v-on:click="specialAttack">SPECIAL ATTACK</div>
+			<div class="button" v-on:click="heal">HEAL</div>
+			<div class="button" v-on:click="reset">GIVE UP</div>
+		</div>
+	</div>
+	<div class="game-log">
+		<table>
+			<thead>
+				<tr>
+					<th width="40%"></th>
+					<th width="40%"></th>
+					<th width="20%"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr v-for="(log, index) in gameLog"
+					v-bind:class="{ attack: log.type === 'Attack',
+					 				heal: log.type === 'Heal',
+					 				special: log.type === 'Special Attack' }">
+					<td><span>{{ log.attacker }}</span></td>
+					<td><span>{{ log.type }}</span></td>
+					<td><span>{{ log.power }}</span></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+
+</body>
+<script type="text/javascript">
+	var app = new Vue({
+	  el: '.game-container',
+	  data: {
+	    player: {
+	    	name: 'Darragh',
+	    	health: 100
+	    },
+	    monster: {
+	    	name: 'Monster',
+	    	health: 100
+	    },
+	    gameLog: [],
+	    specialAttacks: [1, 25],
+		gameOver : false
+	  },
+	  methods: {
+	  	attack: function () {
+	  		this.monster.health -= 10;
+	  		this.checkMonsterStatus()
+	  		this.logAction(this.player.name, 'Attack', 10)
+	  		this.monsterAttack()	
+	  	},
+	  	specialAttack: function () {
+	  		let power = this.specialAttacks[Math.floor(Math.random() * this.specialAttacks.length)];
+	  		this.monster.health -= power
+	  		this.checkMonsterStatus()
+	  		this.logAction(this.player.name, 'Special Attack', power)
+	  		this.monsterAttack()
+	  	},
+	  	monsterAttack: function () {
+	  		if(!this.gameOver) {
+		  		let power = this.getRandomInt(0, 15);
+		  		this.player.health -= power
+		  		this.logAction(this.monster.name, 'Attack', power)
+	  		}
+	  	},
+	  	heal: function () {
+	  		this.player.health += 10
+	  		this.logAction(this.player.name, 'Heal', 10)
+	  		this.monsterAttack()
+	  	},
+	  	getRandomInt: function (min, max) {
+    		return Math.floor(Math.random() * (max - min + 1)) + min;
+		},
+		logAction: function (attacker, attack, power) {
+			this.gameLog.push({
+				attacker: attacker,
+				type: attack,
+				power: power
+			})
+		},
+		checkMonsterStatus: function() {
+			if (this.monster.health < 1){
+				this.gameOver = true;
+			}
+		},
+		reset: function() {
+			this.gameLog = [];
+			this.player.health = 100;
+			this.monster.health = 100;
+			this.gameOver = false;
+		}
+	  },
+	  computed: {
+	  	getPlayerHealth: function () {
+	  		if(this.player.health < 1){
+	  			return '0%'
+	  		}
+	  		return this.player.health + '%'
+	  	},
+	  	getMonsterHealth: function () {
+	  		if(this.monster.health < 1){
+	  			return '0%'
+	  		}
+	  		return this.monster.health + '%'
+	  	}
+	  }
+	})
+</script>
+</html>
